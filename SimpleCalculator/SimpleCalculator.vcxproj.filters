@@ -48,6 +48,9 @@
     <ClInclude Include="MathOPS.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Controler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="SimpleCalculator.cpp">
@@ -66,6 +69,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Buttons.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Controler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

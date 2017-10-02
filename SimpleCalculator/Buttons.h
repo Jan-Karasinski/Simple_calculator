@@ -34,6 +34,8 @@ public:
 class RButton final : public CButton, public ISpecialHistoryButton, public IReplacingButton {
 	bool m_placeholder;
 public:
+	RButton() = default;
+
 	RButton(bool _placeholder, const CString&, std::function<long double(std::vector<const CString*>)>);
 
 	RButton(bool _placeholder, const CString&, std::function<long double(std::vector<const CString*>)>, std::function<void(CString&)>);
@@ -48,6 +50,8 @@ public:
 //Button for arithmetic operations
 class AButton final : public CButton, public IHistoryButton, public IArithmeticButton {
 public:
+	AButton() = default;
+
 	AButton(const CString&, arithmetic_operator);
 
 	CString GetDescription() const final;
@@ -58,6 +62,8 @@ public:
 //Button for digis
 class DButton final : public CButton, public IHistoryButton {
 public:
+	DButton() = default;
+
 	DButton(const CString&);
 
 	CString GetDescription() const final;

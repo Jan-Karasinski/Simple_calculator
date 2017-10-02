@@ -20,7 +20,7 @@ void MathOPS::resetOperator() {
 }
 
 bool MathOPS::isSetOperator() {
-	return m_operator == nullptr;
+	return m_operator != nullptr;
 }
 
 

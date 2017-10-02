@@ -189,6 +189,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Buttons.h" />
+    <ClInclude Include="Controler.h" />
     <ClInclude Include="MathHistory.h" />
     <ClInclude Include="MathOPS.h" />
     <ClInclude Include="Operations.h" />
@@ -201,6 +202,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Buttons.cpp" />
+    <ClCompile Include="Controler.cpp" />
     <ClCompile Include="MathHistory.cpp" />
     <ClCompile Include="MathOPS.cpp" />
     <ClCompile Include="SimpleCalculator.cpp" />

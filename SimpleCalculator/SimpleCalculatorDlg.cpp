@@ -16,7 +16,8 @@
 // CSimpleCalculatorDlg dialog
 
 CSimpleCalculatorDlg::CSimpleCalculatorDlg(CWnd* pParent /*=NULL*/)
-	: CDialogEx(IDD_SIMPLECALCULATOR_DIALOG, pParent), m_history(&m_history_ctrl)
+	: CDialogEx(IDD_SIMPLECALCULATOR_DIALOG, pParent), m_history(&m_history_ctrl),
+		m_controler(this, &m_output_ctrl, &buttons_map, &m_history, &m_math)
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 }
@@ -45,7 +46,7 @@ void CSimpleCalculatorDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_BUTTON_EQUALS, m_button_equals);
 
 	DDX_Control(pDX, IDC_BUTTON_PLUS, m_button_plus);
-	DDX_Control(pDX, IDC_BUTTON_SUB, m_button_minus);
+	DDX_Control(pDX, IDC_BUTTON_SUB, m_button_sub);
 	DDX_Control(pDX, IDC_BUTTON_MULT, m_button_mult);
 	DDX_Control(pDX, IDC_BUTTON_DIV, m_button_div);
 
@@ -62,11 +63,11 @@ BEGIN_MESSAGE_MAP(CSimpleCalculatorDlg, CDialogEx)
 	ON_COMMAND_RANGE(IDC_BUTTON0, IDC_BUTTON9, &AddDigit)
 	ON_COMMAND_RANGE(IDC_BUTTON_PLUS, IDC_BUTTON_DIV, &ArithmeticOPS)
 	ON_COMMAND_RANGE(IDC_BUTTON_PERC, IDC_BUTTON_NEG, &ReplacingOPS)
-	ON_BN_CLICKED(IDC_BUTTON_DPOINT, &CSimpleCalculatorDlg::OnBnClickedButtonDPoint)
-	ON_BN_CLICKED(IDC_BUTTON_BACK, &CSimpleCalculatorDlg::OnBnClickedButtonBack)
-	ON_BN_CLICKED(IDC_BUTTON_CE, &CSimpleCalculatorDlg::OnBnClickedButtonCe)
-	ON_BN_CLICKED(IDC_BUTTON_C, &CSimpleCalculatorDlg::OnBnClickedButtonC)
-	ON_BN_CLICKED(IDC_BUTTON_EQUALS, &CSimpleCalculatorDlg::OnBnClickedButtonEquals)
+	ON_BN_CLICKED(IDC_BUTTON_DPOINT, &CSimpleCalculatorDlg::OnClickDPoint)
+	ON_BN_CLICKED(IDC_BUTTON_BACK, &CSimpleCalculatorDlg::OnClickBack)
+	ON_BN_CLICKED(IDC_BUTTON_CE, &CSimpleCalculatorDlg::OnClickCe)
+	ON_BN_CLICKED(IDC_BUTTON_C, &CSimpleCalculatorDlg::OnClickC)
+	ON_BN_CLICKED(IDC_BUTTON_EQUALS, &CSimpleCalculatorDlg::OnClickEquals)
 END_MESSAGE_MAP()
 
 // CSimpleCalculatorDlg message handlers
@@ -121,7 +122,7 @@ BOOL CSimpleCalculatorDlg::PreTranslateMessage(MSG * pMSG) {
 					AddDigit(IDC_BUTTON9); break;
 				}
 				case VK_DECIMAL: case VK_OEM_PERIOD: {
-					OnBnClickedButtonDPoint(); break;
+					OnClickDPoint(); break;
 				}
 
 				case VK_ADD: case VK_OEM_PLUS: {
@@ -138,10 +139,10 @@ BOOL CSimpleCalculatorDlg::PreTranslateMessage(MSG * pMSG) {
 					ArithmeticOPS(IDC_BUTTON_DIV); break;
 				}
 				case VK_RETURN: {
-					OnBnClickedButtonEquals(); return TRUE; // Prevent closing dlg
+					OnClickEquals(); return TRUE; // Prevent closing dlg
 				}
 				case VK_BACK: {
-					OnBnClickedButtonBack(); break;
+					OnClickBack(); break;
 				}
 				case VK_TAB: {
 					return FALSE;
@@ -172,8 +173,8 @@ BOOL CSimpleCalculatorDlg::OnInitDialog()
 								0, 0, 0, 0, _T("Microsoft Sans serif"));
 	
 	for (auto bt : buttons_map) {
-		bt->SetFont(&m_font_button);
-		bt->SetButtonStyle(BS_FLAT);
+		bt.second->SetFont(&m_font_button);
+		bt.second->SetButtonStyle(BS_FLAT);
 	}
 
 	m_output_ctrl.SetFont(&m_font_cedit);
@@ -218,196 +219,36 @@ HCURSOR CSimpleCalculatorDlg::OnQueryDragIcon()
 	return static_cast<HCURSOR>(m_hIcon);
 }
 
-//Font
-void CSimpleCalculatorDlg::ResizeFont(CWnd *pWnd, CFont *pFont, int height) {
-	pFont->Detach();
-	pFont->CreateFont(height, 0, 0, 0, FW_BOLD, 0, 0, 0, DEFAULT_CHARSET,
-						0, 0, 0, 0, L"Microsoft Sans serif");
-	pWnd->SetFont(pFont);
-}
-
-void CSimpleCalculatorDlg::SetAndResize(CWnd *pWnd, const CString &text) {
-	pWnd->SetWindowText(text);
-	ResizeFont(pWnd, pWnd->GetFont(), text.GetLength() > 12 ? 18 : 24);
-}
-
-void CSimpleCalculatorDlg::Reset() {
-	m_result = "";
-	m_second = "";
-	m_placeholder = 0;
-	m_error = 0;
-
-	m_math.resetOperator();
-	m_history.Clear();
-}
-
 //Msg handlers
 void CSimpleCalculatorDlg::AddDigit(UINT nid) {
-	if (!m_error) {
-		if (!m_history.IsEmpty()) {
-			if (!m_history.LastIsArith()) {
-				m_history.DeleteLast();
-			}
-		}
-		CString temp;
-		m_output_ctrl.GetWindowText(temp);
-		if (temp != "0" && !m_placeholder) {
-			temp += static_cast<DButton*>(GetDlgItem(nid))->GetDescription();
-		}
-		else {
-			temp = static_cast<DButton*>(GetDlgItem(nid))->GetDescription();
-			m_placeholder = 0;
-		}
-		SetAndResize(&m_output_ctrl, temp);
-		m_recent_action = ACTION::BUTTON;
-	}
-	static_cast<CButton*>(GetDlgItem(nid))->SetButtonStyle(BS_FLAT);
-}
-
-void CSimpleCalculatorDlg::OnBnClickedButtonDPoint() {
-	if (!m_error) {
-		CString temp;
-		m_output_ctrl.GetWindowText(temp);
-		if (!m_placeholder && temp.Find('.') == -1) {
-			temp += '.';
-			SetAndResize(&m_output_ctrl, temp);
-		}
-	}
-	m_button_dpoint.SetButtonStyle(BS_FLAT);
+	m_controler.AddDigit(nid);
 }
 
 void CSimpleCalculatorDlg::ArithmeticOPS(UINT nid) {
-	if (!m_error) {
-		try
-		{
-			if (m_history.IsEmpty() || !m_math.isSetOperator()) {
-				m_output_ctrl.GetWindowText(m_result);
-				m_history.Add(m_result);
-			}
-			else if (m_recent_action != ACTION::ARITHMETIC) {
-				m_output_ctrl.GetWindowText(m_second);
-				if (!m_placeholder) {
-					m_history.Add(m_second);
-				}
-				m_result.Format(L"%.16g", m_math.compute(m_result, m_second));
-
-				SetAndResize(&m_output_ctrl, m_result);
-			}
-			m_math.setOperator(static_cast<AButton*>(GetDlgItem(nid)));
-			m_history.Add(static_cast<AButton*>(GetDlgItem(nid)));
-			m_placeholder = 1;
-			m_recent_action = ACTION::ARITHMETIC;
-		}
-		catch (const std::exception& e)
-		{
-			SetAndResize(&m_output_ctrl, CString(e.what()));
-#ifndef NDEBUG
-			AfxMessageBox(L"ArithmeticOPS");
-#endif
-			m_error = 1;
-		}
-	}
-	static_cast<CButton*>(GetDlgItem(nid))->SetButtonStyle(BS_FLAT);
+	m_controler.ArithmeticOPS(nid);
 }
 
 // Operators which replaces current number
-void CSimpleCalculatorDlg::ReplacingOPS(UINT nid) { 
-	if (!m_error) {
-		try
-		{
-			CString temp;
-			if (m_history.IsEmpty()) {
-				m_output_ctrl.GetWindowText(m_result);
-				m_history.Add(static_cast<RButton*>(GetDlgItem(nid)), m_result);
-				temp.Format(L"%.16g", m_math.compute(static_cast<RButton*>(GetDlgItem(nid)), { &m_result }));
-			}
-			else {
-				m_output_ctrl.GetWindowText(temp);
-				m_history.Add(static_cast<RButton*>(GetDlgItem(nid)), temp);
-				temp.Format(L"%.16g", m_math.compute(static_cast<RButton*>(GetDlgItem(nid)), { &temp, &m_result }));
-			}
-			SetAndResize(&m_output_ctrl, temp);
-			m_placeholder = static_cast<RButton*>(GetDlgItem(nid))->GetPlaceholder();
-			m_recent_action = ACTION::REPLACING;
-		}
-		catch (const std::exception& e)
-		{
-			SetAndResize(&m_output_ctrl, CString(e.what()));
-#ifndef NDEBUG
-			AfxMessageBox(L"ReplacingOPS");
-#endif
-			m_error = 1;
-		}
-	}
-	static_cast<CButton*>(GetDlgItem(nid))->SetButtonStyle(BS_FLAT);
+void CSimpleCalculatorDlg::ReplacingOPS(UINT nid) {
+	m_controler.ReplacingOPS(nid);
 }
 
-void CSimpleCalculatorDlg::OnBnClickedButtonBack() {
-	if (!m_error && !m_placeholder) {
-		CString temp;
-		m_output_ctrl.GetWindowText(temp);
-		if (temp.GetLength() > 1) {
-			temp.Delete(temp.GetLength()-1, 1);
-			SetAndResize(&m_output_ctrl, temp);
-		}
-		else {
-			SetAndResize(&m_output_ctrl, L"0");
-		}
-	}
-	m_recent_action = ACTION::BUTTON;
-	m_button_back.SetButtonStyle(BS_FLAT);
+void CSimpleCalculatorDlg::OnClickDPoint() {
+	m_controler.OnClickDPoint();
 }
 
-void CSimpleCalculatorDlg::OnBnClickedButtonCe() {
-	if (m_error) {
-		Reset();
-	}
-	else if (!m_error && m_history.LastIsRepl()) {
-		m_history.DeleteLast();
-	}
-	SetAndResize(&m_output_ctrl, L"0");
-	m_recent_action = ACTION::BUTTON;
-	m_button_ce.SetButtonStyle(BS_FLAT);
+void CSimpleCalculatorDlg::OnClickBack() {
+	m_controler.OnClickBack();
 }
 
-void CSimpleCalculatorDlg::OnBnClickedButtonC() {
-	SetAndResize(&m_output_ctrl, L"0");
-	Reset();
-	m_recent_action = ACTION::BUTTON;
-	m_button_c.SetButtonStyle(BS_FLAT);
+void CSimpleCalculatorDlg::OnClickCe() {
+	m_controler.OnClickCe();
 }
 
-void CSimpleCalculatorDlg::OnBnClickedButtonEquals() {
-	if (!m_error && m_math.isSetOperator()) {
-		try
-		{
-			if (!m_placeholder) {
-				m_output_ctrl.GetWindowText(m_second);
-				
-				m_result.Format(L"%.16g", m_math.compute(m_result, m_second));
-				
-				SetAndResize(&m_output_ctrl, m_result);
-				m_placeholder = 1;
-			}
-			else{
-				if (!m_history.IsEmpty()) {
-					m_output_ctrl.GetWindowText(m_second);
-				}
-				m_result.Format(L"%.16g", m_math.compute(m_result, m_second));
+void CSimpleCalculatorDlg::OnClickC() {
+	m_controler.OnClickC();
+}
 
-				SetAndResize(&m_output_ctrl, m_result);
-			}
-			m_history.Clear();
-			m_recent_action = ACTION::BUTTON;
-		}
-		catch (const std::exception& e)
-		{
-			SetAndResize(&m_output_ctrl, CString(e.what()));
-#ifndef NDEBUG
-			AfxMessageBox(L"OnBnClickedButtonEquals");
-#endif
-			m_error = 1;
-		}
-	}
-	m_button_equals.SetButtonStyle(BS_FLAT);
+void CSimpleCalculatorDlg::OnClickEquals() {
+	m_controler.OnClickEquals();
 }

@@ -3,11 +3,8 @@
 #include "MathOPS.h"
 #include "MathHistory.h"
 #include "Buttons.h"
+#include "Controler.h"
 #include <vector>
-
-enum class ACTION : UINT {
-	REPLACING, ARITHMETIC, BUTTON
-};
 
 // CSimpleCalculatorDlg dialog
 class CSimpleCalculatorDlg : public CDialogEx
@@ -38,15 +35,9 @@ protected:
 	afx_msg HCURSOR OnQueryDragIcon();
 	DECLARE_MESSAGE_MAP()
 
-	
 	History m_history;
 	MathOPS m_math;
-
-	CString m_result, m_second;
-	bool m_placeholder{ 0 };
-	bool m_error{ 0 };
-	bool m_new_sequence{ 1 };
-	ACTION m_recent_action = ACTION::BUTTON;
+	Controler m_controler;
 
 	CFont m_font_button, m_font_cedit;
 
@@ -55,69 +46,66 @@ protected:
 			m_button_7{ CString("7") }, m_button_8{ CString("8") }, m_button_9{ CString("9") },
 			m_button_0{ CString("0") };
 
-	AButton m_button_plus  { CString("+"), [&](const CString& a, const CString& b) { return m_math.add (a, b); } },
-			m_button_minus { CString("-"), [&](const CString& a, const CString& b) { return m_math.sub (a, b); } },
-			m_button_mult  { CString("*"), [&](const CString& a, const CString& b) { return m_math.mult(a, b); } },
-			m_button_div   { CString("/"), [&](const CString& a, const CString& b) { return m_math.div	(a, b); } };
+	AButton m_button_plus	{ CString("+"), [&](const CString& a, const CString& b) { return m_controler.m_math->add (a, b); } },
+			m_button_sub	{ CString("-"), [&](const CString& a, const CString& b) { return m_controler.m_math->sub (a, b); } },
+			m_button_mult	{ CString("*"), [&](const CString& a, const CString& b) { return m_controler.m_math->mult(a, b); } },
+			m_button_div	{ CString("/"), [&](const CString& a, const CString& b) { return m_controler.m_math->div	(a, b); } };
 	
-	RButton m_button_reciproc { true, CString("reciproc"), [&](std::vector<const CString*> vec) {
-																	return m_math.reciproc(std::move(vec)); } },
-			m_button_perc	  { true, CString("perc"),	   [&](std::vector<const CString*> vec) {
-																	return m_math.perc	 (std::move(vec)); },
+	RButton m_button_reciproc { true, CString("reciproc"), [&](std::vector<const CString*> vec) { return m_controler.m_math->reciproc (std::move(vec)); } },
+			m_button_perc	  { true, CString("perc"),	   [&](std::vector<const CString*> vec) { return m_controler.m_math->perc (std::move(vec)); },
 									[&](CString& number) {
-										if (!m_history.IsEmpty()) {
+										if (!m_controler.m_history->IsEmpty()) {
 											CString temp;
-											if (m_history.LastIsRepl()) {
-												m_history.DeleteLast();
+											if (m_controler.m_history->LastIsRepl()) {
+												m_controler.m_history->DeleteLast();
 											}
-											temp.Format(L" %.16g", m_button_perc.compute({ &number, &m_result }));
-											m_history._history += temp;
+											temp.Format(L" %.16g", m_button_perc.compute({ &number, &(m_controler.m_result) }));
+											m_controler.m_history->_history += temp;
 										}
 										else {
-											m_history._history = L"0";
+											m_controler.m_history->_history = L"0";
 										}}},
-			m_button_sqrt { true,  CString("sqrt"),	  [&](std::vector<const CString*> vec) { return m_math.sqrt(std::move(vec)); } },
-			m_button_neg  { false, CString("negate"), [&](std::vector<const CString*> vec) { return m_math.neg (std::move(vec)); },
+			m_button_sqrt { true,  CString("sqrt"),	  [&](std::vector<const CString*> vec) { return m_controler.m_math->sqrt(std::move(vec)); } },
+			m_button_neg  { false, CString("negate"), [&](std::vector<const CString*> vec) { return m_controler.m_math->neg (std::move(vec)); },
 									[&](CString& number) {
-										if (!m_history.IsEmpty()) {
-											if (m_history.LastIsNumber()) {
-												m_history.DeleteLast();
-												m_history._history += L'-' + number;
+										if (!m_controler.m_history->IsEmpty()) {
+											if (m_controler.m_history->LastIsNumber()) {
+												m_controler.m_history->DeleteLast();
+												m_controler.m_history->_history += L'-' + number;
 											}
-											else if (m_history.LastIsRepl()) {
-												auto& history = m_history._history;
+											else if (m_controler.m_history->LastIsRepl()) {
+												auto& history = m_controler.m_history->_history;
 												history.Insert(history.ReverseFind(' ') + 1, m_button_neg.GetDescription() + L"(");
 												history += ')';
 											}
 										}}};
 
-	CButton m_button_equals, m_button_ce, m_button_c, m_button_dpoint;
-	CButton m_button_back;
+	CButton m_button_equals, m_button_ce, m_button_c, m_button_dpoint, m_button_back;
 
-	CEdit	m_output_ctrl, m_history_ctrl;
+	CEdit m_output_ctrl, m_history_ctrl;
 
-	std::vector<CButton *> buttons_map = {  &m_button_1, &m_button_2, &m_button_3, &m_button_4, &m_button_5, &m_button_6,
-											&m_button_7, &m_button_8, &m_button_9, &m_button_0,
-											
-											&m_button_plus, &m_button_minus, &m_button_mult, &m_button_div,
+	std::map<UINT, CButton*> buttons_map = { { IDC_BUTTON1, &m_button_1 },{IDC_BUTTON2, &m_button_2},{ IDC_BUTTON3, &m_button_3 },
+											{ IDC_BUTTON4, &m_button_4 },{ IDC_BUTTON5, &m_button_5 },{ IDC_BUTTON6, &m_button_6 },
+											{ IDC_BUTTON7, &m_button_7 },{ IDC_BUTTON8, &m_button_8 },{ IDC_BUTTON9, &m_button_9 },
+											{ IDC_BUTTON0, &m_button_0 },
 
-											&m_button_reciproc, &m_button_perc, &m_button_sqrt, &m_button_neg,
+											{ IDC_BUTTON_PLUS, &m_button_plus },{ IDC_BUTTON_SUB, &m_button_sub },
+											{ IDC_BUTTON_MULT, &m_button_mult },{ IDC_BUTTON_DIV, &m_button_div },
 	
-											&m_button_equals, &m_button_ce, &m_button_c, &m_button_dpoint,
-											&m_button_back };
+											{ IDC_BUTTON_RECIPROC, &m_button_reciproc },{ IDC_BUTTON_PERC, &m_button_perc }, 
+											{ IDC_BUTTON_SQRT, &m_button_sqrt },{ IDC_BUTTON_NEG, &m_button_neg }, 
+	
+											{ IDC_BUTTON_EQUALS, &m_button_equals },{ IDC_BUTTON_CE, &m_button_ce }, 
+											{ IDC_BUTTON_C, &m_button_c },{ IDC_BUTTON_DPOINT, &m_button_dpoint }, 
+											{ IDC_BUTTON_BACK, &m_button_back } };
 
 public:
-	void ResizeFont(CWnd*, CFont*, int);
-	void SetAndResize(CWnd*, const CString&);
-	void Reset();
-
 	afx_msg void ArithmeticOPS(UINT);
 	afx_msg void ReplacingOPS(UINT);
-	
 	afx_msg void AddDigit(UINT);
-	afx_msg void OnBnClickedButtonDPoint();
-	afx_msg void OnBnClickedButtonBack();
-	afx_msg void OnBnClickedButtonCe();
-	afx_msg void OnBnClickedButtonC();
-	afx_msg void OnBnClickedButtonEquals();
+	afx_msg void OnClickDPoint();
+	afx_msg void OnClickBack();
+	afx_msg void OnClickCe();
+	afx_msg void OnClickC();
+	afx_msg void OnClickEquals();
 };
