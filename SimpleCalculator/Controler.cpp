@@ -153,7 +153,7 @@ void Controler::OnClickCe() {
 	if (m_error) {
 		Reset();
 	}
-	else if (m_history->LastIsRepl()) {
+	else if (!m_history->IsEmpty() && m_history->LastIsRepl()) {
 		m_history->DeleteLast();
 	}
 	SetAndResize(_display, L"0");
