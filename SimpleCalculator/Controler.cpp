@@ -1,24 +1,23 @@
 #include "stdafx.h"
-#include "SimpleCalculatorDlg.h"
 #include "Controler.h"
 #include "Buttons.h"
 
-//Font
-void FontControler::ResizeFont(CWnd *pWnd, CFont *pFont, int height) {
+void FontControler::ResizeFont(CWnd* pWnd, CFont* pFont, int height) {
 	pFont->Detach();
 	pFont->CreateFont(height, 0, 0, 0, FW_BOLD, 0, 0, 0, DEFAULT_CHARSET,
 		0, 0, 0, 0, L"Microsoft Sans serif");
 	pWnd->SetFont(pFont);
 }
 
-void FontControler::SetAndResize(CWnd *pWnd, const CString &text) {
+void FontControler::SetAndResize(CWnd* pWnd, const CString &text) {
 	pWnd->SetWindowText(text);
 	ResizeFont(pWnd, pWnd->GetFont(), text.GetLength() > 12 ? 18 : 24);
 }
 
-Controler::Controler(CSimpleCalculatorDlg* pdlg, CEdit* pwnd, std::map<UINT, CButton*>* pmap, History* phist, MathOPS* pmath)
-	: _dlg(pdlg), _display(pwnd), _buttons(pmap), m_history(phist), m_math(pmath)
+Controler::Controler(CEdit* pwnd, std::map<UINT, CButton*>* pmap, History* phist, MathOPS* pmath)
+	: _display(pwnd), _buttons(pmap), m_history(phist), m_math(pmath)
 {
+	
 }
 
 void Controler::Reset() {
@@ -28,6 +27,7 @@ void Controler::Reset() {
 	m_error = 0;
 	m_recent_action = ACTION::BUTTON;
 
+	
 	m_math->resetOperator();
 	m_history->Clear();
 }
@@ -43,16 +43,16 @@ void Controler::AddDigit(UINT nid) {
 		CString temp;
 		_display->GetWindowText(temp);
 		if (temp != "0" && !m_placeholder) {
-			temp += static_cast<DButton*>(_dlg->GetDlgItem(nid))->GetDescription();
+			temp += static_cast<DButton*>(_buttons->at(nid))->GetDescription();
 		}
 		else {
-			temp = static_cast<DButton*>(_dlg->GetDlgItem(nid))->GetDescription();
+			temp = static_cast<DButton*>(_buttons->at(nid))->GetDescription();
 			m_placeholder = 0;
 		}
 		SetAndResize(_display, temp);
 		m_recent_action = ACTION::BUTTON;
 	}
-	static_cast<CButton*>(_dlg->GetDlgItem(nid))->SetButtonStyle(BS_FLAT);
+	static_cast<CButton*>(_buttons->at(nid))->SetButtonStyle(BS_FLAT);
 }
 
 void Controler::OnClickDPoint() {
@@ -84,7 +84,6 @@ void Controler::ArithmeticOPS(UINT nid) {
 
 				SetAndResize(_display, m_result);
 			}
-			//m_math.setOperator(static_cast<AButton*>(_dlg->GetDlgItem(nid)));
 			m_math->setOperator(static_cast<AButton*>(_buttons->at(nid)));
 			m_history->Add(static_cast<AButton*>(_buttons->at(nid)));
 			m_placeholder = 1;
@@ -99,7 +98,7 @@ void Controler::ArithmeticOPS(UINT nid) {
 			m_error = 1;
 		}
 	}
-	static_cast<CButton*>(_dlg->GetDlgItem(nid))->SetButtonStyle(BS_FLAT);
+	static_cast<CButton*>(_buttons->at(nid))->SetButtonStyle(BS_FLAT);
 }
 
 // Operators which replaces current number
@@ -115,7 +114,7 @@ void Controler::ReplacingOPS(UINT nid) {
 			}
 			else {
 				_display->GetWindowText(temp);
-				m_history->Add(static_cast<RButton*>(_dlg->GetDlgItem(nid)), temp);
+				m_history->Add(static_cast<RButton*>(_buttons->at(nid)), temp);
 				temp.Format(L"%.16g", m_math->compute(static_cast<RButton*>(_buttons->at(nid)), { &temp, &m_result }));
 			}
 			SetAndResize(_display, temp);
@@ -196,7 +195,7 @@ void Controler::OnClickEquals() {
 		{
 			SetAndResize(_display, CString(e.what()));
 #ifndef NDEBUG
-			AfxMessageBox(L"OnBnClickedButtonEquals");
+			AfxMessageBox(L"OnClickEquals");
 #endif
 			m_error = 1;
 		}

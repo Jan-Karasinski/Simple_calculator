@@ -3,6 +3,7 @@
 #include "MathHistory.h"
 #include "MathOPS.h"
 #include <map>
+#include <memory>
 
 enum class ACTION : UINT {
 	REPLACING, ARITHMETIC, BUTTON
@@ -18,21 +19,22 @@ protected:
 
 class Controler : public FontControler
 {
-	CSimpleCalculatorDlg* _dlg;
-	CEdit*  _display;
+	CEdit*   _display;
 	History* m_history;
 	MathOPS* m_math;
 
 	std::map<UINT, CButton*>* _buttons;
 
-	CString m_result, m_second;
-	bool m_placeholder{ 0 };
-	bool m_error{ 0 };
-	bool m_new_sequence{ 1 };
-	ACTION m_recent_action = ACTION::BUTTON;
+	CString	m_result, m_second;
+	bool	m_placeholder{ 0 };
+	bool	m_error{ 0 };
+	ACTION	m_recent_action = ACTION::BUTTON;
 
 public:
-	Controler(CSimpleCalculatorDlg*, CEdit*, std::map<UINT, CButton*>*, History*, MathOPS*);
+	Controler(CEdit*, std::map<UINT, CButton*>*, History*, MathOPS*);
+	Controler(const Controler&) = delete;
+
+	Controler& operator=(const Controler&) = delete;
 
 	void Reset();
 
@@ -45,6 +47,6 @@ public:
 	void OnClickC();
 	void OnClickEquals();
 
-	friend class CSimpleCalculatorDlg;
+	friend class CSimpleCalculatorDlg; // for special buttons
 };
 

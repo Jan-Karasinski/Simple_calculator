@@ -1,8 +1,5 @@
 #include "stdafx.h"
 #include "CppUnitTest.h"
-
-#define private public
-
 #include "..\SimpleCalculator\MathOPS.cpp"
 #include "..\SimpleCalculator\MathHistory.cpp"
 #include "..\SimpleCalculator\Buttons.cpp"
@@ -242,5 +239,4 @@ namespace CalculatorTest
 			Assert::IsTrue(test._history == L"2");
 		}
 	};
-
 }

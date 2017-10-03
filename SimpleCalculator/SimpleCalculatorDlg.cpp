@@ -17,7 +17,7 @@
 
 CSimpleCalculatorDlg::CSimpleCalculatorDlg(CWnd* pParent /*=NULL*/)
 	: CDialogEx(IDD_SIMPLECALCULATOR_DIALOG, pParent), m_history(&m_history_ctrl),
-		m_controler(this, &m_output_ctrl, &buttons_map, &m_history, &m_math)
+		m_controler(&m_output_ctrl, &buttons_map, &m_history, &m_math)
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 }
@@ -72,7 +72,7 @@ END_MESSAGE_MAP()
 
 // CSimpleCalculatorDlg message handlers
 
-BOOL CSimpleCalculatorDlg::PreTranslateMessage(MSG * pMSG) {
+BOOL CSimpleCalculatorDlg::PreTranslateMessage(MSG* pMSG) {
 	if (pMSG->message == WM_SETFOCUS) {
 		return TRUE;
 	}
